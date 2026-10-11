@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>判子・ハンコ ジェネレーター｜印鑑 作成 無料（円印・角印・楕円印）</title>
+<meta name="description" content="名前や会社名を入力するだけで、円印・角印・楕円印の印影を無料で作成できる判子・ハンコ ジェネレーター。透過PNG（高解像度）のダウンロード、実寸印刷、明朝体／ゴシック体の書体選択、印肉のかすれ（濃淡ムラ）の再現に対応。登録不要、すべてブラウザ内で完結します。">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#b3382c">
+<link rel="canonical" href="https://www.reveriel.com/hanko-generator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="判子・ハンコ ジェネレーター｜印鑑 作成 無料（円印・角印・楕円印）">
+<meta property="og:description" content="円印・角印・楕円印の印影を無料で作成。透過PNGダウンロード・実寸印刷・かすれ再現に対応。登録不要、ブラウザだけで完結。">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://www.reveriel.com/hanko-generator/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b3382c'/%3E%3Ccircle cx='16' cy='16' r='9.5' fill='none' stroke='%23fff' stroke-width='2.6'/%3E%3Cpath d='M16 10v12M13 13h6M13 19h6' stroke='%23fff' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6fc01bf3ac5e457ba1bd16b91e5b653e"}'></script><!-- End Cloudflare Web Analytics -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "判子・印鑑ジェネレーター",
+      "alternateName": "ハンコ 作成ツール",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web",
+      "url": "https://www.reveriel.com/hanko-generator/",
+      "description": "文字を入力するだけで円印・角印・楕円印の印影を無料で作成できるブラウザ完結型のツール。透過PNG出力、実寸印刷、書体・印肉色・かすれの調整に対応。",
+      "inLanguage": "ja",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "featureList": [
+        "円印・角印・楕円印の3種類に対応",
+        "円印の回り文字（上部の円弧）と中央の縦組み",
+        "角印の縦書き（右→左）・横書きの切り替え",
+        "明朝体／ゴシック体の書体選択",
+        "印肉の色（朱色など）とかすれ（濃淡ムラ）の調整",
+        "透過背景の高解像度PNG（800 / 1200 / 2000 px）ダウンロード",
+        "実寸（mm指定）での印刷",
+        "中文／日本語の画面切り替え、入力内容はブラウザ内のみで処理"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "このツールで作った印鑑は、実印や銀行印として使えますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "いいえ。本ツールが生成するのは印影の「見本・デザイン用」画像です。実印・銀行印・法人印として法的に有効な印鑑は、印鑑登録や銀行届出に使える正式な刻印品・実印が必要です。必ず印鑑店・はんこ屋にご依頼ください。本ツールは、押印位置の確認、書類の下書き、デザイン検討、スタンプ画像の作成などにご利用ください。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "本当に無料ですか？登録は必要ですか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "完全無料・登録不要です。すべての処理はブラウザ内で完結し、入力した文字がサーバーに送信されることはありません。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "ダウンロードしたPNGは透過（透明背景）ですか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。背景が透明なPNGで、800×800 / 1200×1200 / 2000×2000 px から選べます。書類や資料にそのまま重ねられます。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "かすれ（印肉のムラ）は再現できますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。印影の輪郭をゆがめず、印肉の濃淡と局部のかすれだけをノイズで再現しています。かすれの強さはスライダーで調整でき、0にするとクリーンな印影になります。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "会社の角印や銀行の楕円印も作れますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "はい。円印・角印・楕円印に対応しています。角印は縦書き（右から左）と横書き、円印は上部の回り文字に対応しており、法人印や銀行印の下書き・デザイン確認に使えます。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "作った印影を商用利用できますか？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "自分で作成する書類の下書き・デザイン用途であればご利用いただけます。ただし、他人の印鑑を偽造・模倣する目的や、文書偽造など法令に違反する目的での使用は固く禁じます。"
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site-header no-print">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="currentColor"/>
+        <circle cx="16" cy="16" r="9.6" fill="none" stroke="#fff" stroke-width="2.4"/>
+        <path d="M16 10.4v11.2M13.2 13.4h5.6M13.2 18.8h5.6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-text">
+        <strong data-i18n="brandName">判子・印鑑ジェネレーター</strong>
+        <span data-i18n="tagline">無料・登録不要・ブラウザだけで完結</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-ghost" id="langBtn" data-i18n-aria="btnLang" aria-label="表示言語を切り替える">中文</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap layout">
+
+  <!-- ============ 入力パネル ============ -->
+  <section class="panel panel-form no-print" aria-labelledby="formTitle">
+    <h1 class="hero-h1" id="formTitle" data-i18n="h1Title">判子・印鑑 ジェネレーター（無料）</h1>
+    <p class="hero-lead" data-i18n="h1Lead">文字を入れるだけで、円印・角印・楕円印の印影をその場で作成。透過PNGのダウンロード、実寸印刷、印肉のかすれ（濃淡ムラ）の再現まで対応しています。入力内容はブラウザの外に出ません。</p>
+
+    <!-- 印章の種類 -->
+    <fieldset class="field">
+      <legend data-i18n="legendType">印章の種類</legend>
+      <div class="seg seg-3" id="typeGroup" role="group">
+        <button type="button" class="seg-btn" data-val="round" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="seg-ic"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 8v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span data-i18n="tRound">円印（まるいん）</span>
+        </button>
+        <button type="button" class="seg-btn" data-val="square" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="seg-ic"><rect x="3.5" y="3.5" width="17" height="17" rx="1" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="1" fill="none" stroke="currentColor" stroke-width="1"/><path d="M10 8.5v7M14 8.5v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span data-i18n="tSquare">角印（かくいん）</span>
+        </button>
+        <button type="button" class="seg-btn" data-val="oval" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="seg-ic"><ellipse cx="12" cy="12" rx="9.5" ry="6.2" fill="none" stroke="currentColor" stroke-width="1.8"/><ellipse cx="12" cy="12" rx="7" ry="4" fill="none" stroke="currentColor" stroke-width="1"/><path d="M7 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span data-i18n="tOval">楕円印（だえんいん）</span>
+        </button>
+      </div>
+      <p class="hint" id="typeHint" data-i18n="hintRound">実印・銀行印・認印に。中心に縦書き、上部に回り文字を入れられます。</p>
+    </fieldset>
+
+    <!-- 印影の文字 -->
+    <fieldset class="field">
+      <legend data-i18n="legendText">印影の文字</legend>
+
+      <div class="presets" id="presets">
+        <span class="presets-label" data-i18n="presetLabel">よく使う例：</span>
+        <button type="button" class="chip" data-preset="inkan" data-i18n="pInkan">認印（姓のみ）</button>
+        <button type="button" class="chip" data-preset="ginko" data-i18n="pGinko">銀行印（姓＋名）</button>
+        <button type="button" class="chip" data-preset="jitsuin" data-i18n="pJitsuin">実印（フルネーム）</button>
+        <button type="button" class="chip" data-preset="kaisha" data-i18n="pKaisha">会社の角印</button>
+        <button type="button" class="chip" data-preset="kouza" data-i18n="pKouza">口座の楕円印</button>
+      </div>
+
+      <div class="row" id="mainRow">
+        <label class="lbl" for="mainText" data-i18n="lblMain">主文字（中央・縦書き）</label>
+        <textarea id="mainText" rows="2" maxlength="60" placeholder="例：太郎" data-i18n-ph="phMain" spellcheck="false">太郎</textarea>
+        <p class="hint" id="mainHelp" data-i18n="helpMain_round">中央に縦書きで配置します。空欄にすると枠と回り文字だけになります。</p>
+      </div>
+
+      <div class="row" id="arcRow">
+        <label class="lbl" for="arcText" data-i18n="lblArc">回り文字（上部の円弧）</label>
+        <input type="text" id="arcText" maxlength="20" placeholder="例：山田（空欄でもOK）" data-i18n-ph="phArc" autocomplete="off" spellcheck="false" value="山田">
+      </div>
+    </fieldset>
+
+    <!-- 書体・枠・色 -->
+    <fieldset class="field">
+      <legend data-i18n="legendStyle">書体・枠・色</legend>
+
+      <div class="row row-inline">
+        <span class="lbl" data-i18n="lblRing">枠線</span>
+        <div class="seg seg-2" id="ringGroup" role="group">
+          <button type="button" class="seg-btn" data-val="single" aria-pressed="false" data-i18n="ringSingle">一重</button>
+          <button type="button" class="seg-btn" data-val="double" aria-pressed="false" data-i18n="ringDouble">二重</button>
+        </div>
+      </div>
+
+      <div class="row row-inline" id="dirRow" hidden>
+        <span class="lbl" data-i18n="lblDir">文字の向き</span>
+        <div class="seg seg-2" id="dirGroup" role="group">
+          <button type="button" class="seg-btn" data-val="v" aria-pressed="false" data-i18n="dirV">縦書き</button>
+          <button type="button" class="seg-btn" data-val="h" aria-pressed="false" data-i18n="dirH">横書き</button>
+        </div>
+      </div>
+
+      <div class="row row-inline">
+        <span class="lbl" data-i18n="lblFont">書体</span>
+        <div class="seg seg-2" id="fontGroup" role="group">
+          <button type="button" class="seg-btn" data-val="mincho" aria-pressed="false" data-i18n="fontMincho">明朝体（刻印風）</button>
+          <button type="button" class="seg-btn" data-val="gothic" aria-pressed="false" data-i18n="fontGothic">ゴシック体（くっきり）</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="lbl" data-i18n="lblColor">印肉の色</span>
+        <div class="swatches" id="colorSwatches">
+          <button type="button" class="sw" data-color="#b3382c" style="--sw:#b3382c" title="朱色（標準）" data-i18n-aria="colorCinnabar" aria-label="朱色（標準）"></button>
+          <button type="button" class="sw" data-color="#9e2a20" style="--sw:#9e2a20" title="濃い朱" data-i18n-aria="colorDeep" aria-label="濃い朱"></button>
+          <button type="button" class="sw" data-color="#cf5a45" style="--sw:#cf5a45" title="淡い朱" data-i18n-aria="colorLight" aria-label="淡い朱"></button>
+          <button type="button" class="sw" data-color="#2b2b2b" style="--sw:#2b2b2b" title="黒" data-i18n-aria="colorBlack" aria-label="黒（訂正印など）"></button>
+          <label class="sw sw-custom" title="色を自分で選ぶ">
+            <input type="color" id="colorCustom" value="#b3382c" data-i18n-aria="lblCustomColor" aria-label="色を自分で選ぶ">
+          </label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="lbl" for="strength" data-i18n="lblStrength">かすれ（印肉のムラ）</label>
+        <div class="range-row">
+          <input type="range" id="strength" min="0" max="100" step="5" value="100">
+          <output id="strengthOut" for="strength">100%</output>
+        </div>
+        <p class="hint" data-i18n="strengthHint">大きいほどかすれ・ムラが強くなります。0 にするとクリーンな印影になります。</p>
+      </div>
+
+      <div class="row row-check">
+        <label class="check">
+          <input type="checkbox" id="tiltChk" checked>
+          <span data-i18n="lblTilt">捺印の傾き（わずかに傾ける）</span>
+        </label>
+        <p class="hint" data-i18n="lblSampleSeedNote">同じ文字・同じ設定なら、同じ印影が再現されます。</p>
+      </div>
+    </fieldset>
+
+    <!-- 出力 -->
+    <fieldset class="field">
+      <legend data-i18n="legendOut">ダウンロード・印刷</legend>
+      <div class="row row-inline">
+        <label class="lbl" for="pngSize" data-i18n="lblSize">PNGサイズ</label>
+        <select id="pngSize">
+          <option value="800">800 × 800 px</option>
+          <option value="1200">1200 × 1200 px</option>
+          <option value="2000">2000 × 2000 px</option>
+        </select>
+      </div>
+      <div class="row row-inline">
+        <label class="lbl" for="printMm" data-i18n="lblPrintMm">印刷サイズ（実寸）</label>
+        <select id="printMm">
+          <option value="12">12 mm（認印）</option>
+          <option value="15" selected>15 mm</option>
+          <option value="18">18 mm（実印）</option>
+          <option value="21">21 mm（角印）</option>
+        </select>
+      </div>
+      <p class="hint" data-i18n="printHint">実寸で印刷して大きさの確認に使えます。印刷設定で「ページに合わせる」をオフにしてください。</p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btnPng">
+          <svg viewBox="0 0 20 20" aria-hidden="true" class="ic"><path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 14.5V16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-i18n="btnPng">透過PNGをダウンロード</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="btnPrint">
+          <svg viewBox="0 0 20 20" aria-hidden="true" class="ic"><path d="M6 7V3h8v4M6 15H4.5A1.5 1.5 0 0 1 3 13.5v-4A1.5 1.5 0 0 1 4.5 8h11A1.5 1.5 0 0 1 17 9.5v4a1.5 1.5 0 0 1-1.5 1.5H14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="6" y="12" width="8" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span data-i18n="btnPrint">印刷する</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="btnReset" data-i18n="btnReset">リセット</button>
+      </div>
+    </fieldset>
+  </section>
+
+  <!-- ============ プレビューパネル ============ -->
+  <section class="panel panel-preview" aria-labelledby="previewTitle">
+    <h2 class="panel-title no-print" id="previewTitle" data-i18n="previewTitle">プレビュー</h2>
+
+    <div class="seal-stage">
+      <div class="seal-wrap" id="sealWrap">
+        <div id="sealPreview" class="seal-preview"><!-- SVG をここに描画 --></div>
+      </div>
+    </div>
+    <p class="hint center no-print" data-i18n="previewNote">チェック柄は透明部分です。</p>
+
+    <div class="share no-print">
+      <p class="share-title" data-i18n="shareTitle">このツールをシェアする</p>
+      <div class="share-btns">
+        <button type="button" class="btn btn-x" id="shareX">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.63l-5.2-6.8-5.94 6.8H1.73l7.73-8.84L1.3 2.25h6.8l4.71 6.23zM17.08 19.77h1.83L7.01 4.13H5.05z" fill="currentColor"/></svg>
+          <span data-i18n="shareX">X で共有</span>
+        </button>
+        <button type="button" class="btn btn-line" id="shareLine">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><path d="M12 2.5C6.75 2.5 2.5 6.06 2.5 10.45c0 3.93 3.42 7.22 8.04 7.85.31.07.74.21.85.48.1.25.06.63.03.88l-.14.85c-.04.25-.2.98.86.53 1.05-.44 5.7-3.36 7.77-5.75 1.43-1.57 2.09-3.16 2.09-4.84 0-4.39-4.25-7.95-9.5-7.95zM8.2 13.36H6.55a.38.38 0 0 1-.38-.38V8.9a.38.38 0 0 1 .76 0v3.71H8.2a.38.38 0 0 1 0 .76zm1.72-.38a.38.38 0 0 1-.76 0V8.9a.38.38 0 0 1 .76 0zm4.42 0a.38.38 0 0 1-.27.36.4.4 0 0 1-.11.02.38.38 0 0 1-.3-.14l-1.9-2.53v2.29a.38.38 0 0 1-.76 0V8.9a.38.38 0 0 1 .26-.36.39.39 0 0 1 .42.12l1.9 2.53V8.9a.38.38 0 0 1 .76 0zm3.28-2.9a.38.38 0 0 1 0 .75h-1.27v1.06h1.27a.38.38 0 0 1 0 .75h-1.65a.38.38 0 0 1-.38-.38V8.9a.38.38 0 0 1 .38-.38h1.65a.38.38 0 0 1 0 .76h-1.27v1.04z" fill="currentColor"/></svg>
+          <span data-i18n="shareLine">LINE で共有</span>
+        </button>
+        <button type="button" class="btn btn-ghost" id="shareCopy" data-i18n="shareCopy">リンクをコピー</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ 解説・免責 ============ -->
+<section class="wrap article no-print">
+  <h2 class="article-h2" data-i18n="faqTitle">よくある質問</h2>
+  <div class="faq">
+    <details open>
+      <summary data-i18n="faqQ1">このツールで作った印鑑は、実印や銀行印として使えますか？</summary>
+      <p data-i18n="faqA1">いいえ。本ツールが生成するのは印影の「見本・デザイン用」画像です。実印・銀行印・法人印として法的に有効な印鑑は、印鑑登録や銀行届出に使える正式な刻印品が必要です。必ず印鑑店・はんこ屋にご依頼ください。押印位置の確認、書類の下書き、デザイン検討などにご利用ください。</p>
+    </details>
+    <details>
+      <summary data-i18n="faqQ2">本当に無料ですか？登録は必要ですか？</summary>
+      <p data-i18n="faqA2">完全無料・登録不要です。すべての処理はブラウザ内で完結し、入力した文字がサーバーに送信されることはありません。</p>
+    </details>
+    <details>
+      <summary data-i18n="faqQ3">ダウンロードしたPNGは透過（透明背景）ですか？</summary>
+      <p data-i18n="faqA3">はい。背景が透明なPNGで、800×800 / 1200×1200 / 2000×2000 px から選べます。書類や資料にそのまま重ねられます。</p>
+    </details>
+    <details>
+      <summary data-i18n="faqQ4">かすれ（印肉のムラ）は再現できますか？</summary>
+      <p data-i18n="faqA4">はい。輪郭をゆがめず、印肉の濃淡と局部のかすれだけをノイズで再現しています。かすれの強さはスライダーで調整できます。</p>
+    </details>
+    <details>
+      <summary data-i18n="faqQ5">会社の角印や銀行の楕円印も作れますか？</summary>
+      <p data-i18n="faqA5">はい。円印・角印・楕円印に対応しています。角印は縦書き（右→左）と横書き、円印は上部の回り文字に対応しています。</p>
+    </details>
+    <details>
+      <summary data-i18n="faqQ6">作った印影を商用利用できますか？</summary>
+      <p data-i18n="faqA6">自分で作成する書類の下書き・デザイン用途であればご利用いただけます。ただし、他人の印鑑を偽造・模倣する目的での使用は固く禁じます。</p>
+    </details>
+  </div>
+
+  <div class="legal">
+    <h2 class="article-h2" data-i18n="legalTitle">ご利用にあたって（免責事項）</h2>
+    <p data-i18n="legalBody">本ツールが生成するのは印影の「見本・デザイン用」画像です。実印・銀行印・法人印など正式な印鑑は、印鑑登録や銀行届出に対応した正規の刻印品を印鑑店にご依頼ください。他人の印影の偽造や文書偽造など、法令に違反する目的での使用は固くお断りします。</p>
+  </div>
+</section>
+
+<footer class="site-footer no-print">
+  <div class="wrap">
+    <p data-i18n="footerText">判子・印鑑ジェネレーター — 円印・角印・楕円印の印影を無料で作成できるツール</p>
+    <p class="footer-links">
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSfHGUfgAlViT3TFiVtJi_EpJ4ioUpd9oGyaJ7rehEV-gBH_PA/viewform?usp=pp_url&amp;entry.1745177199=%E5%8D%B0%E7%AB%A0%E7%94%9F%E6%88%90%E5%99%A8" target="_blank" rel="noopener" data-i18n="footerFeedback">ご意見・フィードバック</a>
+    </p>
+  </div>
+</footer>
+
+<!-- トースト -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="script.js"></script>
+<!-- フィードバックFAB（右下固定・常時表示） -->
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSfHGUfgAlViT3TFiVtJi_EpJ4ioUpd9oGyaJ7rehEV-gBH_PA/viewform?usp=pp_url&amp;entry.1745177199=%E5%8D%B0%E7%AB%A0%E7%94%9F%E6%88%90%E5%99%A8" target="_blank" rel="noopener" class="feedback-fab" data-i18n-aria="fabAria" aria-label="ご意見・フィードバックを送る">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span data-i18n="footerFeedback">ご意見・フィードバック</span>
+</a>
+</body>
+</html>
