@@ -646,3 +646,73 @@ input[type="range"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--
     aspect-ratio: auto;
   }
 }
+
+/* =========================================================
+   【PR】アフィリエイト枠（印鑑の注文）
+   日本語ページ専用。A8.net 登録後にリンクを差し替える。
+   ========================================================= */
+
+.pr-affiliate { margin-block: 22px 6px; }
+
+.pr-box {
+  position: relative;
+  padding: 22px 24px 20px;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+@media (max-width: 600px) { .pr-box { padding: 18px 16px 16px; } }
+
+.pr-badge {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 2px 9px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #fff;
+  background: var(--c-text-faint);
+  border-radius: 4px;
+}
+
+.pr-title {
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: var(--c-text);
+}
+
+.pr-lead {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--c-text-muted);
+}
+.pr-lead strong { color: var(--c-text); }
+
+.pr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.pr-actions .pr-link { text-decoration: none; }
+
+.pr-note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--c-text-faint);
+}
+
+.pr-pixel {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}

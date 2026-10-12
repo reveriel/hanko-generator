@@ -51,7 +51,7 @@
 .guide strong { color: var(--c-text, #131a26); font-weight: 700; }
 .guide ul, .guide ol { margin: 0 0 16px; padding-left: 1.5em; color: var(--c-text-muted, #55617a); }
 .guide li { margin-bottom: 7px; }
-.guide a { color: var(--c-accent, #1d4e89); }
+.guide a:not(.btn) { color: var(--c-accent, #1d4e89); }
 
 .guide-example {
   margin: 0 0 16px;
@@ -136,8 +136,103 @@
 .guide-related a:hover { text-decoration: underline; }
 .guide-related .rel-desc { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 400; color: var(--c-text-faint, #8592a8); }
 
+/* =========================================================
+   法務ページ（プライバシーポリシー / 運営者情報）
+   ========================================================= */
+
+.legal-page { padding-block: 32px 56px; }
+
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-decoration: none;
+}
+.legal-back:hover { color: var(--c-accent); }
+
+.legal {
+  max-width: 780px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 32px 34px 38px;
+}
+@media (max-width: 640px) { .legal { padding: 22px 18px 28px; } }
+
+.legal h1 {
+  font-size: 24px;
+  margin: 0 0 8px;
+  line-height: 1.5;
+  color: var(--c-text);
+}
+.legal .legal-meta {
+  font-size: 12px;
+  color: var(--c-text-faint);
+  margin: 0 0 28px;
+}
+.legal h2 {
+  font-size: 17px;
+  margin: 32px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-text);
+}
+.legal h3 { font-size: 15px; margin: 22px 0 6px; color: var(--c-text); }
+.legal p { margin: 0 0 12px; color: var(--c-text-muted); }
+.legal ol,
+.legal ul { margin: 0 0 14px; padding-left: 1.4em; color: var(--c-text-muted); }
+.legal ol { list-style: decimal; }
+.legal ul { list-style: disc; }
+.legal li { margin-bottom: 6px; }
+.legal strong { color: var(--c-text); }
+.legal a:not(.btn) { color: var(--c-accent); }
+
+.legal-table {
+  width: 100%;
+  margin: 8px 0 18px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.legal-table th,
+.legal-table td {
+  padding: 13px 16px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-text-muted);
+}
+.legal-table th {
+  width: 34%;
+  min-width: 140px;
+  font-weight: 700;
+  color: var(--c-text);
+  background: var(--c-surface-2);
+}
+.legal-table tr:last-child th,
+.legal-table tr:last-child td { border-bottom: 0; }
+
+.legal-contact {
+  margin-top: 32px;
+  padding: 18px 20px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-2);
+  font-size: 13.5px;
+  color: var(--c-text-muted);
+}
+.legal-contact p { margin: 0; }
+.legal-contact p + p { margin-top: 6px; }
+
+/* ---------------- 印刷 ---------------- */
+
 @media print {
   .site-header, .site-footer, .feedback-fab, .breadcrumb,
-  .guide-cta-box, .guide-cta-foot, .guide-related { display: none !important; }
-  .guide { border: 0; box-shadow: none; padding: 0; }
+  .guide-cta-box, .guide-cta-foot, .guide-related,
+  .legal-back, .pr-affiliate { display: none !important; }
+  .guide, .legal { border: 0; box-shadow: none; padding: 0; background: transparent; }
 }
