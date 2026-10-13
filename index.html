@@ -47,7 +47,9 @@
         "円印の回り文字（上部の円弧）と中央の縦組み",
         "角印の縦書き（右→左）・横書きの切り替え",
         "明朝体／ゴシック体の書体選択",
-        "印肉の色（朱色など）とかすれ（濃淡ムラ）の調整",
+        "印肉の色（朱色など）の選択",
+        "濃さ・かすれ・にじみ・傾き（押し圧ムラ）の4スライダーと乱数シードによる質感調整",
+        "「きれい／標準／使い込んだ／濃い」の質感プリセット",
         "透過背景の高解像度PNG（800 / 1200 / 2000 px）ダウンロード",
         "実寸（mm指定）での印刷",
         "中文／日本語の画面切り替え、入力内容はブラウザ内のみで処理"
@@ -224,14 +226,64 @@
         </div>
       </div>
 
-      <div class="row">
-        <label class="lbl" for="strength" data-i18n="lblStrength">かすれ（印肉のムラ）</label>
-        <div class="range-row">
-          <input type="range" id="strength" min="0" max="100" step="5" value="100">
-          <output id="strengthOut" for="strength">100%</output>
-        </div>
-        <p class="hint" data-i18n="strengthHint">大きいほどかすれ・ムラが強くなります。0 にするとクリーンな印影になります。</p>
+    </fieldset>
+
+    <!-- 質感（本物らしさ） -->
+    <fieldset class="field">
+      <legend data-i18n="legendTexture">質感（本物らしさ）</legend>
+
+      <div class="presets" id="texturePresets">
+        <span class="presets-label" data-i18n="presetTextureLabel">質感：</span>
+        <button type="button" class="chip chip-tx" data-texture="clean" data-i18n="txClean">きれい</button>
+        <button type="button" class="chip chip-tx" data-texture="standard" data-i18n="txStandard">標準</button>
+        <button type="button" class="chip chip-tx" data-texture="worn" data-i18n="txWorn">使い込んだ</button>
+        <button type="button" class="chip chip-tx" data-texture="deep" data-i18n="txDeep">濃い</button>
       </div>
+
+      <div class="row">
+        <label class="lbl" for="inkAmount" data-i18n="lblInk">濃さ（印肉の量）</label>
+        <div class="range-row">
+          <input type="range" id="inkAmount" min="0" max="100" step="5" value="80">
+          <output id="inkAmountOut" for="inkAmount">80%</output>
+        </div>
+        <p class="hint" data-i18n="inkHint">多いほど濃くしっかり載り、少ないほど淡く透けた印影になります。</p>
+      </div>
+
+      <div class="row">
+        <label class="lbl" for="strength" data-i18n="lblStrength">かすれ（局部の欠け）</label>
+        <div class="range-row">
+          <input type="range" id="strength" min="0" max="100" step="5" value="55">
+          <output id="strengthOut" for="strength">55%</output>
+        </div>
+        <p class="hint" data-i18n="strengthHint">大きいほど局部の欠け・ムラが強くなります。0 にするとクリーンな印影になります。</p>
+      </div>
+
+      <div class="row">
+        <label class="lbl" for="bleed" data-i18n="lblBleed">にじみ（滲み・はみ出し）</label>
+        <div class="range-row">
+          <input type="range" id="bleed" min="0" max="100" step="5" value="28">
+          <output id="bleedOut" for="bleed">28%</output>
+        </div>
+        <p class="hint" data-i18n="bleedHint">輪郭の外へ印肉が滲み出す効果です。</p>
+      </div>
+
+      <div class="row">
+        <label class="lbl" for="press" data-i18n="lblPress">傾き（押し圧のムラ）</label>
+        <div class="range-row">
+          <input type="range" id="press" min="0" max="100" step="5" value="45">
+          <output id="pressOut" for="press">45%</output>
+        </div>
+        <p class="hint" data-i18n="pressHint">斜めに押したときの「片側が濃く、片側が淡い」圧ムラを再現します。</p>
+      </div>
+
+      <div class="row row-inline">
+        <span class="lbl" data-i18n="lblSeed">乱数シード</span>
+        <div class="seed-row">
+          <output id="seedOut" class="seed-out">#0</output>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnSeed" data-i18n="btnSeed">ランダム再生成</button>
+        </div>
+      </div>
+      <p class="hint" data-i18n="seedHint">模様の出方をランダムに引き直します。</p>
 
       <div class="row row-check">
         <label class="check">
@@ -355,7 +407,7 @@
     </details>
     <details>
       <summary data-i18n="faqQ4">かすれ（印肉のムラ）は再現できますか？</summary>
-      <p data-i18n="faqA4">はい。輪郭をゆがめず、印肉の濃淡と局部のかすれだけをノイズで再現しています。かすれの強さはスライダーで調整できます。</p>
+      <p data-i18n="faqA4">はい。文字の形は正確なまま、多層のインク層で濃淡・局部のかすれ・にじみ・押し圧のムラを再現しています。濃さ／かすれ／にじみ／傾きの4つのスライダーで個別に調整でき、「きれい／標準／使い込んだ／濃い」の質感プリセットも用意しています。</p>
     </details>
     <details>
       <summary data-i18n="faqQ5">会社の角印や銀行の楕円印も作れますか？</summary>
