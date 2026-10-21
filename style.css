@@ -471,6 +471,7 @@ input[type="range"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--
 }
 .seal-preview { width: 100%; height: 100%; line-height: 0; }
 .seal-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.seal-canvas { width: 100%; height: 100%; display: block; }
 
 /* ---------------- シェア ---------------- */
 

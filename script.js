@@ -2,10 +2,10 @@
    判子・印鑑ジェネレーター（円印・角印・楕円印）— script.js
    純粋なフロントエンドのみ。外部通信は行いません。
 
-   印影の「本物らしさ」は、多層のインク層（にじみ／墨の本体／輪郭のゆらぎ）で
-   再現しています。文字の幾何は常に完全なまま（変位は一切かけません）。
-   変位（feDisplacementMap）は「枠＝輪郭」の層にだけ、低周波・微小振幅で掛けます。
-   詳細は buildSealSVG の直前のコメントを参照。
+   印影の「本物らしさ」は、彫られた形のマスクをラスタライズし、紙の繊維・
+   押し圧・インク量・かすれ・にじみをピクセル単位で合成して再現しています。
+   文字の形は彫られた形のまま、輪郭だけをわずかに揺らします。
+   詳細は renderImpression の直前のコメントを参照。
    ========================================================================= */
 (function () {
   'use strict';
@@ -68,23 +68,15 @@
   };
 
   /* =========================================================================
-     印影を「物理的に蓋した痕跡」に近づける多層モデル
-     =========================================================================
+     印影エンジン（Canvas ピクセル合成）
 
-     層構成（下から順に描画）:
-       層0 ゆらぎ層 : 枠（輪郭）だけを低周波・微小振幅で変位させる（文字は不動）
-       層1 にじみ層 : 本体を dilate + blur した低不透明度の墨（紙への滲み・はみ出し）
-       層2 墨の本体 : 幾何学的に完全な枠＋文字
-                       ／ かすれフィルタ（高周波ノイズの閾値で alpha を 0 に）
-                       ／ 圧ムラマスク（方向性グラデ × 大スケールノイズの濃淡場）
-                       ／ 濃さ（不透明度）
-
-     ・枠と文字の「幾何」は原則そのまま。変位は輪郭層のみ・振幅は最大 1.25
-       （viewBox 100 に対して 1.25 ≒ 1.25%）。文字には絶対に掛けない。
-     ・ノイズ種別は "fractalNoise" ではなく "turbulence" を使う。
-       fractalNoise の alpha は 0.5 付近に山を持つ分布になり、閾値マッピングと
-       組み合わせるとほぼ実心の印（有墨 avg alpha ≒247 / 淡薄 0.3%）になる。
-       turbulence は両極分布（avg ≒157 / 淡薄 ≒33%）で、かすれが出る。
+     実際の押印を観察すると、インクは「均一な半透明の塗り」ではない。
+       - 紙の繊維に沿って 1〜5px の濃淡ができる
+       - 押し圧の差で 10〜40px の大きな濃淡が出る
+       - 枠や画の縁は、欠け・かすれ・にじみで輪郭が揺らぐ
+       - 同じ印でも場所ごとにインクの量が違う
+     そのため SVG フィルターの重ね掛けではなく、幾何マスクを
+     ラスタライズしてからピクセル単位で「インクの乗り方」を合成する。
      ========================================================================= */
 
   function clamp01(v) { return Math.max(0, Math.min(1, v)); }
@@ -94,102 +86,102 @@
     if (!isFinite(n)) n = (dflt === undefined ? 0 : dflt);
     return clamp01(n / 100);
   }
-  function hex2(n) {
-    var s = Math.max(0, Math.min(255, Math.round(n))).toString(16);
-    return s.length < 2 ? '0' + s : s;
+
+  /* --- 決定的ノイズ（同じシードなら常に同じ印影） ------------------------- */
+
+  function ihash(x, y, seed) {
+    var n = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(seed | 0, 1442695041);
+    n = Math.imul(n ^ (n >>> 13), 1274126177);
+    return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
   }
 
-  /*
-    かすれ（局部欠け）フィルタ。
-    高周波 turbulence を table で閾値化し、SourceGraphic の alpha に乗算する。
-    大半は 1 に飽和（＝しっかり載る）、ごく一部だけ 0 に落ちる（＝欠け）。
-    strength（0〜100）で落ち込み量を比例配分する。
-  */
-  function kasareFilterXML(uid, seed, strength) {
-    var k = pct01(strength);
-    if (!(k > 0.005)) return ''; // かすれ無し（フィルターを掛けない＝クリーンな印影）
+  function smoothStep(t) { return t * t * (3 - 2 * t); }
 
-    var base = [0, 0.25, 0.65, 0.95, 1, 1, 1];
-    var table = base.map(function (v) {
-      return Math.round((1 - (1 - v) * k) * 1000) / 1000;
-    }).join(' ');
-
-    return '<filter id="' + uid + '-kasare" x="-10%" y="-10%" width="120%" height="120%">' +
-      '<feTurbulence type="turbulence" baseFrequency="0.3" numOctaves="4" seed="' + seed + '" result="noise"/>' +
-      '<feComponentTransfer in="noise" result="thr"><feFuncA type="table" tableValues="' + table + '"/></feComponentTransfer>' +
-      '<feComposite in="SourceGraphic" in2="thr" operator="in" result="stamped"/>' +
-      '<feComponentTransfer in="stamped"><feFuncA type="linear" slope="1.3" intercept="0"/></feComponentTransfer>' +
-      '</filter>';
+  function vnoise(x, y, seed) {
+    var xi = Math.floor(x), yi = Math.floor(y);
+    var xf = x - xi, yf = y - yi;
+    var a = ihash(xi, yi, seed), b = ihash(xi + 1, yi, seed);
+    var c = ihash(xi, yi + 1, seed), d = ihash(xi + 1, yi + 1, seed);
+    var u = smoothStep(xf), v = smoothStep(yf);
+    return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
   }
 
-  /*
-    輪郭のゆらぎ（手押し感）。
-    低周波（baseFrequency 0.02 ≒ 波長 50）の微小変位を、枠だけに掛ける。
-    振幅は最大 1.25 / viewBox100。文字層には掛けないので字は絶対に滲まない。
-  */
-  function edgeFilterXML(uid, seed, press) {
-    var k = pct01(press);
-    if (!(k > 0.005)) return '';
-    var amp = (0.3 + 0.95 * k).toFixed(2);
-    return '<filter id="' + uid + '-edge" x="-8%" y="-8%" width="116%" height="116%">' +
-      '<feTurbulence type="turbulence" baseFrequency="0.02" numOctaves="2" seed="' + seed + '" result="warp"/>' +
-      '<feDisplacementMap in="SourceGraphic" in2="warp" scale="' + amp + '" xChannelSelector="R" yChannelSelector="G"/>' +
-      '</filter>';
+  function fbm(x, y, seed, oct) {
+    var sum = 0, amp = 0.5, freq = 1, norm = 0;
+    for (var i = 0; i < oct; i++) {
+      sum += amp * vnoise(x * freq, y * freq, seed + i * 101);
+      norm += amp;
+      amp *= 0.5;
+      freq *= 2;
+    }
+    return sum / norm;
   }
 
-  /*
-    にじみ（滲み・はみ出し）フィルタ。
-    墨をわずかに膨張（dilate）させてからぼかし、輪郭の外へ墨が滲んだ層を作る。
-  */
-  function bleedFilterXML(uid, bleed) {
-    var k = pct01(bleed);
-    // あくまで輪郭のすぐ外側に滲む「フリンジ」。広げすぎると発光のように見えるので、
-    // 半径は控えめ（最大 0.42 / viewBox100 ≒ 800px 出力で 3.4px）に保つ。
-    var r = (0.1 + 0.3 * k).toFixed(2);
-    var sd = (0.14 + 0.32 * k).toFixed(2);
-    return '<filter id="' + uid + '-bleed" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">' +
-      '<feMorphology in="SourceGraphic" operator="dilate" radius="' + r + '"/>' +
-      '<feGaussianBlur stdDeviation="' + sd + '"/>' +
-      '</filter>';
+  // 低周波フィールドを 4px 格子で作り、双一次補間で読む（速度優先）
+  function makeField(px, scale, seed, oct) {
+    var step = 4;
+    var gw = Math.ceil(px / step) + 2;
+    var arr = new Float32Array(gw * gw);
+    for (var gy = 0; gy < gw; gy++) {
+      for (var gx = 0; gx < gw; gx++) {
+        arr[gy * gw + gx] = fbm(gx * step / scale, gy * step / scale, seed, oct);
+      }
+    }
+    return { arr: arr, gw: gw, step: step };
   }
 
-  /*
-    押し圧のムラ（傾き）マスク。
-    マスクは「明るい＝墨が濃い」なので、
-      1) 方向性のリニアグラデ（一辺が薄い＝蓋し傾いた）
-      2) 大スケールのノイズを黒ベタとして重ねる（局所的な濃淡ムラ）
-    を重ねて、連続的な 0〜1 の alpha 場を作る。
-    グレースケールのみを使うので、輝度マスクの色空間に依存しない。
-  */
-  function pressMaskXML(uid, seed, press) {
-    var k = pct01(press);
-    if (!(k > 0.005)) return '';
+  function fieldAt(f, x, y) {
+    // 端を超える座標（縁の揺らぎで +37/+71 ずらした時など）はクランプする
+    var gx = Math.min(f.gw - 2, Math.max(0, x / f.step));
+    var gy = Math.min(f.gw - 2, Math.max(0, y / f.step));
+    var x0 = gx | 0, y0 = gy | 0;
+    var tx = gx - x0, ty = gy - y0;
+    var i = y0 * f.gw + x0;
+    var a = f.arr[i], b = f.arr[i + 1];
+    var c = f.arr[i + f.gw], d = f.arr[i + f.gw + 1];
+    return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+  }
 
-    var ang = ((seed * 61) % 360) * Math.PI / 180;
-    var dx = Math.cos(ang) * 62;
-    var dy = Math.sin(ang) * 62;
-    // 薄い側の明度。全体的に沈みすぎないよう控えめ（最大 30% 減）にして、
-    // 「片側が薄い」というムラだけを与える（平均の濃さは 濃さスライダーが担う）。
-    var dark = Math.round((1 - 0.3 * k) * 255);
-    var darkHex = '#' + hex2(dark) + hex2(dark) + hex2(dark);
-    var blobOp = (0.12 + 0.4 * k).toFixed(2);               // ムラの深さ
+  // 幾何マスクを双一次補間で読む（縁の揺らぎ＝ゆるい位置ずれに使う）
+  function sampleMask(alpha, px, x, y) {
+    if (x <= 0 || y <= 0 || x >= px - 1 || y >= px - 1) return 0;
+    var x0 = x | 0, y0 = y | 0;
+    var tx = x - x0, ty = y - y0;
+    var i = y0 * px + x0;
+    var a = alpha[i], b = alpha[i + 1], c = alpha[i + px], d = alpha[i + px + 1];
+    return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+  }
 
-    return '<linearGradient id="' + uid + '-dir" gradientUnits="userSpaceOnUse" ' +
-        'x1="' + (50 - dx).toFixed(1) + '" y1="' + (50 - dy).toFixed(1) + '" ' +
-        'x2="' + (50 + dx).toFixed(1) + '" y2="' + (50 + dy).toFixed(1) + '">' +
-        '<stop offset="0" stop-color="#ffffff"/>' +
-        '<stop offset="0.55" stop-color="#ffffff"/>' +
-        '<stop offset="1" stop-color="' + darkHex + '"/>' +
-      '</linearGradient>' +
-      '<filter id="' + uid + '-blob" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">' +
-        '<feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="2" seed="' + seed + '" result="n"/>' +
-        '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.85 0.85 0 0 -0.5"/>' +
-      '</filter>' +
-      '<mask id="' + uid + '-mask" maskUnits="userSpaceOnUse" x="-14" y="-14" width="128" height="128">' +
-        '<rect x="-14" y="-14" width="128" height="128" fill="url(#' + uid + '-dir)"/>' +
-        '<rect x="-14" y="-14" width="128" height="128" fill="#000" opacity="' + blobOp +
-          '" filter="url(#' + uid + '-blob)"/>' +
-      '</mask>';
+  // 分離型ボックスブラー（にじみ用）
+  function boxBlur(src, px, r) {
+    if (r <= 0) return src.slice();
+    var tmp = new Float32Array(px * px);
+    var out = new Float32Array(px * px);
+    var win = r * 2 + 1;
+    for (var y = 0; y < px; y++) {
+      var row = y * px;
+      var sum = 0;
+      for (var k = -r; k <= r; k++) sum += src[row + Math.min(Math.max(k, 0), px - 1)];
+      for (var x = 0; x < px; x++) {
+        tmp[row + x] = sum / win;
+        sum += src[row + Math.min(x + r + 1, px - 1)] - src[row + Math.max(x - r, 0)];
+      }
+    }
+    for (var x2 = 0; x2 < px; x2++) {
+      var sum2 = 0;
+      for (var k2 = -r; k2 <= r; k2++) sum2 += tmp[Math.min(Math.max(k2, 0), px - 1) * px + x2];
+      for (var y2 = 0; y2 < px; y2++) {
+        out[y2 * px + x2] = sum2 / win;
+        sum2 += tmp[Math.min(y2 + r + 1, px - 1) * px + x2] - tmp[Math.max(y2 - r, 0) * px + x2];
+      }
+    }
+    return out;
+  }
+
+  function hexRgb(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
+    var n = m ? parseInt(m[1], 16) : 0xb3382c;
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
   }
 
   // 円弧に沿わせる文字のサイズ（文字数が多いほど小さく）
@@ -206,19 +198,21 @@
   // 中央（縦組み）の文字サイズ。maxH に収まるよう丸める。
   function centerFontSize(count, maxH) {
     var base;
-    if (count <= 1) base = 26;
-    else if (count === 2) base = 22;
-    else if (count === 3) base = 16;
-    else if (count === 4) base = 13.5;
-    else if (count === 5) base = 11;
-    else if (count === 6) base = 9.5;
-    else base = 8.4;
+    if (count <= 1) base = 30;
+    else if (count === 2) base = 26;
+    else if (count === 3) base = 18;
+    else if (count === 4) base = 15;
+    else if (count === 5) base = 12.5;
+    else if (count === 6) base = 10.5;
+    else base = 9;
     return Math.min(base, maxH / Math.max(count, 1) / 1.03);
   }
 
   function textEl(x, y, size, color, font, content, extra) {
+    // 刻印の画はフォントより太い。stroke で 0.35 ほど太らせ、かすれ・にじみを乗せる。
     return '<text x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" text-anchor="middle" ' +
-      'font-size="' + size.toFixed(2) + '" font-family="' + font + '" fill="' + color + '"' +
+      'font-size="' + size.toFixed(2) + '" font-family="' + font + '" fill="' + color + '" font-weight="600"' +
+      ' stroke="' + color + '" stroke-width="0.7" stroke-linejoin="round" paint-order="stroke"' +
       (extra ? ' ' + extra : '') + '>' + escapeHtml(content) + '</text>';
   }
 
@@ -233,10 +227,10 @@
 
     // 枠は幾何学的に完全な円（ゆらぎは輪郭層のフィルタ側で与える）
     frame.push('<circle cx="50" cy="50" r="' + outerR + '" fill="none" stroke="' + color +
-      '" stroke-width="' + (single ? 2.6 : 2.8) + '"/>');
+      '" stroke-width="' + (single ? 4.0 : 4.2) + '"/>');
     if (!single) {
       frame.push('<circle cx="50" cy="50" r="' + innerR + '" fill="none" stroke="' + color +
-        '" stroke-width="1.1"/>');
+        '" stroke-width="1.5"/>');
     }
 
     // 回り文字（上部の半円・左→上→右）
@@ -249,7 +243,7 @@
       var d = 'M' + (50 - arcR) + ' 50 A' + arcR + ' ' + arcR + ' 0 0 1 50 ' + (50 - arcR) +
         ' A' + arcR + ' ' + arcR + ' 0 0 1 ' + (50 + arcR) + ' 50';
       defs.push('<path id="' + uid + '-p" d="' + d + '"/>');
-      p.push('<text font-size="' + fs + '" font-family="' + font + '" fill="' + color + '" font-weight="500">' +
+      p.push('<text font-size="' + fs + '" font-family="' + font + '" fill="' + color + '" font-weight="500" stroke="' + color + '" stroke-width="0.45" stroke-linejoin="round" paint-order="stroke">' +
         '<textPath href="#' + uid + '-p" xlink:href="#' + uid + '-p" startOffset="50%" text-anchor="middle" ' +
         'textLength="' + tl + '" lengthAdjust="spacingAndGlyphs">' + escapeHtml(arc) + '</textPath></text>');
     }
@@ -270,13 +264,13 @@
   function buildSquare(frame, p, st, color, font) {
     var single = st.ring === 'single';
     frame.push('<rect x="4" y="4" width="92" height="92" fill="none" stroke="' + color +
-      '" stroke-width="' + (single ? 2.6 : 2.8) + '"/>');
+      '" stroke-width="' + (single ? 4.0 : 4.2) + '"/>');
 
     var box = { x: 4, y: 4, w: 92, h: 92 };
     var pad = 5;
     if (!single) {
       frame.push('<rect x="10" y="10" width="80" height="80" fill="none" stroke="' + color +
-        '" stroke-width="1.1"/>');
+        '" stroke-width="1.5"/>');
       box = { x: 10, y: 10, w: 80, h: 80 };
       pad = 4;
     }
@@ -303,7 +297,7 @@
 
     // 縦組み（1行目が右端、以降は左へ）
     var colW = availW / lines.length;
-    var vfs = Math.min(colW * 0.9, availH / (maxLen * 1.02), 20);
+    var vfs = Math.min(colW * 0.92, availH / (maxLen * 1.02), 24);
     for (var c = 0; c < lines.length; c++) {
       var cx = box.x + box.w - pad - colW * (c + 0.5);
       var chars = lines[c].split('');
@@ -322,10 +316,10 @@
     var ry = single ? 30 : 25.5;
 
     frame.push('<ellipse cx="50" cy="50" rx="46" ry="30" fill="none" stroke="' + color +
-      '" stroke-width="' + (single ? 2.6 : 2.7) + '"/>');
+      '" stroke-width="' + (single ? 3.8 : 4.0) + '"/>');
     if (!single) {
       frame.push('<ellipse cx="50" cy="50" rx="' + rx + '" ry="' + ry + '" fill="none" stroke="' +
-        color + '" stroke-width="1.1"/>');
+        color + '" stroke-width="1.5"/>');
     }
 
     var lines = tidyLines(st.main).slice(0, 2);
@@ -350,10 +344,9 @@
   }
 
   /*
-    印影 SVG を組み立てる（多層モデル）。
-    st = { type, main, arc, ring, dir, font, color,
-           ink, strength, bleed, press, tilt, seed }
-    opts = { width, height } を渡すと出力用に実寸属性を付ける
+     印版（幾何マスク）の SVG を組み立てる。
+     実際のインクの質感は renderImpression() 側でピクセル合成するため、
+     ここでは「彫られた形」だけを返す（フィルターは掛けない）。
   */
   function buildSealSVG(st, opts) {
     opts = opts || {};
@@ -364,59 +357,156 @@
     // 乱数シード（0〜999）。「ランダム再生成」でここが変わり、印影全体が引き直される。
     var seed = ((base + (Number(st.seed) || 0)) % 997) + 3;
     // 捺印の微妙な傾き（-2°〜+2°）。円は円のまま、全体をわずかに回すだけ。
-    var rot = st.tilt ? ((seed % 11) - 5) * 0.4 : 0;
+    var rot = st.tilt ? ((seed % 11) - 5) * 0.65 : 0;
 
     var defs = [];
-    var frame = [];  // 輪郭（ゆらぎ層の対象）
-    var body = [];   // 文字（幾何学的に完全なまま）
+    var frame = [];  // 輪郭
+    var body = [];   // 文字
 
     if (st.type === 'square') buildSquare(frame, body, st, color, font);
     else if (st.type === 'oval') buildOval(frame, body, st, color, font);
     else buildRound(defs, frame, body, st, color, font, uid);
 
-    // --- 原画（輪郭＋文字）を defs に定義し、各層から <use> で参照する ---
-    var edgeF = edgeFilterXML(uid, seed, st.press);
-    if (edgeF) defs.push(edgeF);
-    defs.push('<g id="' + uid + '-src">' +
-      '<g' + (edgeF ? ' filter="url(#' + uid + '-edge)"' : '') + '>' + frame.join('') + '</g>' +
-      '<g>' + body.join('') + '</g>' +
-      '</g>');
-
-    var ref = 'href="#' + uid + '-src" xlink:href="#' + uid + '-src"';
-    var layers = [];
-
-    // --- 層1: にじみ（滲み・はみ出し）---
-    var bleedK = pct01(st.bleed);
-    if (bleedK > 0.005) {
-      defs.push(bleedFilterXML(uid, st.bleed));
-      layers.push('<use ' + ref + ' filter="url(#' + uid + '-bleed)" opacity="' +
-        (0.12 + 0.45 * bleedK).toFixed(3) + '"/>');
-    }
-
-    // --- 層2: 墨の本体 ---
-    var kasareK = pct01(st.strength);
-    var inner = '<use ' + ref + (kasareK > 0.005 ? ' filter="url(#' + uid + '-kasare)"' : '') + '/>';
-    if (kasareK > 0.005) defs.push(kasareFilterXML(uid, seed, st.strength));
-
-    // 押し圧のムラ（方向性 + 大スケールノイズ）をマスクで乗算
-    if (pct01(st.press) > 0.005) {
-      defs.push(pressMaskXML(uid, seed, st.press));
-      inner = '<g mask="url(#' + uid + '-mask)">' + inner + '</g>';
-    }
-    // 濃さ（印肉の量）＝不透明度。0.15〜1.0 の連続値。
-    inner = '<g opacity="' + (0.15 + 0.85 * pct01(st.ink, 100)).toFixed(3) + '">' + inner + '</g>';
-    layers.push(inner);
-
     var attrs = 'viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" ' +
-      'xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="印影"';
+      'xmlns:xlink="http://www.w3.org/1999/xlink"';
     if (opts.width) attrs += ' width="' + opts.width + '" height="' + (opts.height || opts.width) + '"';
 
     var out = ['<svg ' + attrs + '>'];
     if (defs.length) out.push('<defs>' + defs.join('') + '</defs>');
-    out.push('<g transform="rotate(' + rot.toFixed(2) + ' 50 50)">');
-    out.push(layers.join(''));
+    var ox = (((seed * 13) % 7) - 3) * 0.16;
+    var oy = (((seed * 29) % 7) - 3) * 0.16;
+    out.push('<g transform="translate(' + ox.toFixed(2) + ' ' + oy.toFixed(2) + ') rotate(' + rot.toFixed(2) + ' 50 50)">');
+    out.push(frame.join(''));
+    out.push(body.join(''));
     out.push('</g></svg>');
     return out.join('');
+  }
+
+  /*
+     印影を生成する。SVG の幾何マスクを px×px にラスタライズし、
+     ピクセルごとに「紙の繊維・押し圧・かすれ・にじみ」を合成して返す。
+     cb(canvas) は Image の読み込み後に非同期で呼ばれる。
+  */
+  function renderImpression(st, px, cb) {
+    px = Math.max(160, Math.min(1600, px | 0));
+    var svg = buildSealSVG(st, { width: px, height: px });
+    var img = new Image();
+    img.onload = function () {
+      var cv = document.createElement('canvas');
+      cv.width = px; cv.height = px;
+      var ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, px, px);
+      var src = ctx.getImageData(0, 0, px, px).data;
+
+      var alpha = new Float32Array(px * px);
+      for (var i = 0, n = px * px; i < n; i++) alpha[i] = src[i * 4 + 3] / 255;
+
+      var seed = ((hashSeed([st.type, st.main, st.arc, st.ring, st.dir].join('\u0000')) +
+        (Number(st.seed) || 0)) % 997) + 3;
+      var inkK = pct01(st.ink, 100);
+      var wearK = pct01(st.strength);
+      var bleedK = pct01(st.bleed);
+      var pressK = pct01(st.press);
+      var scale = px / 800; // 800px を基準に物理サイズを揃える
+
+      // 低周波フィールド（押し圧・消耗・縁の揺らぎ）
+      var pressField = makeField(px, 260 * scale, seed + 3, 3);   // 大きな濃淡
+      var patchField = makeField(px, 90 * scale, seed + 17, 2);   // ゆっくりした薄い斑
+      var chipField = makeField(px, 9 * scale, seed + 23, 2);     // 細かい欠け（縁のかけ）
+      var mottleField = makeField(px, 16 * scale, seed + 53, 2);  // インクの中ムラ
+      var clumpField = makeField(px, 5 * scale, seed + 59, 2);    // 紙繊維の塊
+      var warpField = makeField(px, 14 * scale, seed + 29, 2);    // 縁の大きな揺らぎ
+      var warp2Field = makeField(px, 4 * scale, seed + 71, 1);    // 縁の細かいざらつき
+
+      var chipThresh = 0.97 - 0.22 * wearK;   // 大きいほど欠けやすい
+      var warpAmp = (0.25 + 5.0 * bleedK) * scale;
+      var blurR = Math.max(1, Math.round((1.2 + 3.5 * bleedK) * scale));
+      var haloK = 0.06 + 0.45 * bleedK;
+      var inkScale = 0.72 + 0.28 * inkK;
+
+      var blurred = boxBlur(alpha, px, blurR);
+      var rgb = hexRgb(st.color || SEAL_COLOR);
+      var out = ctx.createImageData(px, px);
+      var od = out.data;
+
+      // 押し圧の方向（シードで決まる。片側が薄い＝手のひらが傾いた）
+      var ang = ((seed * 73) % 360) * Math.PI / 180;
+      var ca = Math.cos(ang), sa = Math.sin(ang);
+
+      for (var y = 0; y < px; y++) {
+        for (var x = 0; x < px; x++) {
+          var idx = y * px + x;
+          var a = alpha[idx];
+          var blurA = blurred[idx];
+
+          // 縁の揺らぎ：低周波の位置ずれで輪郭をわずかに乱す
+          if (a > 0) {
+            var wx = fieldAt(warpField, x, y) - 0.5;
+            var wy = fieldAt(warpField, x + 37, y + 71) - 0.5;
+            var mx = fieldAt(warp2Field, x + 11, y + 53) - 0.5;
+            var my = fieldAt(warp2Field, x + 91, y + 7) - 0.5;
+            a = sampleMask(alpha, px,
+              x + wx * 2 * warpAmp + mx * scale,
+              y + wy * 2 * warpAmp + my * scale);
+          }
+
+          // 押し圧：大きなムラ + 方向性の傾き
+          var pv = fieldAt(pressField, x, y); // 0..1
+          var dirv = clamp01(0.5 + 0.5 * ((x - px / 2) * ca + (y - px / 2) * sa) / (px * 0.62));
+          var press = (1 - 0.35 * pressK) + 0.35 * pressK * pv;
+          press *= 1 - 0.20 * pressK * (1 - dirv);
+
+          // 消耗：細かい欠け（小さなかけ）と、ゆっくりした薄い斑
+          var chip = fieldAt(chipField, x, y);
+          if (wearK > 0.02 && chip > chipThresh) a *= 0.10 + 0.25 * (1 - wearK);
+          var patch = fieldAt(patchField, x, y);
+          if (patch < 0.40) a *= 0.86 + 0.10 * (patch / 0.40);
+          var mottle = 0.86 + 0.14 * fieldAt(mottleField, x, y);
+          var clump = 0.95 + 0.05 * fieldAt(clumpField, x, y);
+
+          // 紙の繊維（1〜3px）
+          var fiber = 0.88 + 0.12 * vnoise(x * 0.55, y * 0.55, seed + 41);
+          var speck = ihash(x, y, seed + 43);
+          if (speck < 0.03 + 0.05 * wearK) fiber *= 0.62;
+
+          var body = a * press * fiber * mottle * clump * inkScale;
+
+          // にじみ（輪郭の外側に薄く広がる）
+          var halo = blurA * haloK * (0.65 + 0.35 * press);
+
+          var fin = body + halo * (1 - body);
+          if (fin > 0) fin = 1 - Math.pow(1 - Math.min(1, fin), 1.9);
+          if (fin < 0.035) continue;
+
+          // 縁のインク溜まり（アンチエイリアス部分をわずかに濃く）
+          if (a > 0.12 && a < 0.85) fin *= 1.05;
+          if (fin > 1) fin = 1;
+
+          var cr = rgb.r, cg = rgb.g, cb2 = rgb.b;
+          // 縁（アンチエイリアス部）はインクが縁に寄ってわずかに濃く見える
+          if (a > 0.10 && a < 0.75) { cr *= 0.94; cg *= 0.92; cb2 *= 0.92; }
+
+          var o = idx * 4;
+          od[o] = cr;
+          od[o + 1] = cg;
+          od[o + 2] = cb2;
+          od[o + 3] = Math.round(fin * 255);
+        }
+      }
+
+      // 仕上げ：インクの縁をわずかにぼかす（紙への吸収で輪郭が完全な刃物状にならない）
+      var aOut = new Float32Array(px * px);
+      for (var k = 0; k < px * px; k++) aOut[k] = od[k * 4 + 3] / 255;
+      var aSoft = boxBlur(aOut, px, 1);
+      for (var k2 = 0; k2 < px * px; k2++) {
+        od[k2 * 4 + 3] = Math.round(clamp01(aSoft[k2]) * 255);
+      }
+
+      ctx.putImageData(out, 0, 0);
+      cb(cv);
+    };
+    img.onerror = function () { cb(null); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
 
   /* ---------------------------------------------------------
@@ -424,16 +514,8 @@
      --------------------------------------------------------- */
 
   function exportPng(st, px, cb) {
-    var svg = buildSealSVG(st, { width: px, height: px });
-    var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-    var img = new Image();
-    img.onload = function () {
-      var cv = document.createElement('canvas');
-      cv.width = px;
-      cv.height = px;
-      var ctx = cv.getContext('2d');
-      ctx.clearRect(0, 0, px, px); // 背景は透明のまま
-      ctx.drawImage(img, 0, 0, px, px);
+    renderImpression(st, px, function (cv) {
+      if (!cv) { cb(null, new Error('render failed')); return; }
       try {
         cv.toBlob(function (blob) {
           if (!blob) { cb(null, new Error('toBlob failed')); return; }
@@ -442,9 +524,7 @@
       } catch (err) {
         cb(null, err);
       }
-    };
-    img.onerror = function () { cb(null, new Error('SVG image load failed')); };
-    img.src = url;
+    });
   }
 
   function safeFileName(s) {
@@ -621,7 +701,7 @@
     faqQ3: { zh: '下载的 PNG 是透明背景吗？', ja: 'ダウンロードしたPNGは透過（透明背景）ですか？' },
     faqA3: { zh: '是的。背景为透明的 PNG，可选 800×800 / 1200×1200 / 2000×2000 px。可以直接叠加到文件或资料上。', ja: 'はい。背景が透明なPNGで、800×800 / 1200×1200 / 2000×2000 px から選べます。書類や資料にそのまま重ねられます。' },
     faqQ4: { zh: '能再现印泥的浓淡和缺失吗？', ja: 'かすれ（印肉のムラ）は再現できますか？' },
-    faqA4: { zh: '可以。文字几何保持精确，通过多层墨层再现浓淡、局部缺失、渗墨溢出和压力不均。浓淡／缺失／渗墨／倾斜四个滑块可分别调整，并有「干净／标准／用旧了／浓」四种质感预设。', ja: 'はい。文字の形は正確なまま、多層のインク層で濃淡・局部のかすれ・にじみ・押し圧のムラを再現しています。濃さ／かすれ／にじみ／傾きの4つのスライダーで個別に調整でき、「きれい／標準／使い込んだ／濃い」の質感プリセットも用意しています。' },
+    faqA4: { zh: '可以。保留刻字形状，逐像素合成纸张纤维、按压压力、墨量不均、局部缺失与渗墨，重现真实盖印的浓淡和轮廓波动。浓淡／缺失／渗墨／倾斜四个滑块可分别调整，并有「干净／标准／用旧了／浓」四种质感预设。', ja: 'はい。彫られた文字の形はそのままに、紙の繊維・押し圧・インク量のムラ・かすれ・にじみを1ピクセルずつ合成し、実際に押したような濃淡と輪郭の揺らぎを再現しています。濃さ／かすれ／にじみ／傾きの4つのスライダーで調整でき、「きれい／標準／使い込んだ／濃い」の質感プリセットも用意しています。' },
     faqQ5: { zh: '可以做公司的角印、银行的椭圆印吗？', ja: '会社の角印や銀行の楕円印も作れますか？' },
     faqA5: { zh: '可以。支持円印・角印・楕円印。角印支持竖排（从右到左）和横排，円印支持上部环绕文字。', ja: 'はい。円印・角印・楕円印に対応しています。角印は縦書き（右→左）と横書き、円印は上部の回り文字に対応しています。' },
     faqQ6: { zh: '生成的印影可以商用吗？', ja: '作った印影を商用利用できますか？' },
@@ -732,15 +812,31 @@
     applyI18n(lang);
   }
 
+  var renderSeq = 0;
+  var renderQueued = false;
+
+  // 入力のたびに 80ms 前後の合成が走るため、rAF で 1 フレームに 1 回へ間引く
   function render() {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(function () {
+      renderQueued = false;
+      renderNow();
+    });
+  }
+
+  function renderNow() {
     var host = $('sealPreview');
     if (!host) return;
-    host.innerHTML = buildSealSVG(currentState(), null);
-    var svg = host.querySelector('svg');
-    if (svg) {
-      svg.setAttribute('class', 'seal-svg');
-      svg.setAttribute('aria-label', I18N.previewAlt[lang]);
-    }
+    var token = ++renderSeq;
+    renderImpression(currentState(), 760, function (cv) {
+      if (!cv || token !== renderSeq) return;
+      host.innerHTML = '';
+      cv.className = 'seal-canvas';
+      cv.setAttribute('role', 'img');
+      cv.setAttribute('aria-label', I18N.previewAlt[lang]);
+      host.appendChild(cv);
+    });
     var wrap = $('sealWrap');
     if (wrap) wrap.style.setProperty('--print-mm', S.printMm + 'mm');
     var seedOut = $('seedOut');
