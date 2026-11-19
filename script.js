@@ -248,15 +248,26 @@
         'textLength="' + tl + '" lengthAdjust="spacingAndGlyphs">' + escapeHtml(arc) + '</textPath></text>');
     }
 
-    // 中央の縦組み（人名・「○○之印」など）
-    var chars = tidyOne(st.main).slice(0, 12).split('');
+    // 中央の文字（人名・社名・「○○之印」など）
+    // 2文字までは1列、3文字以上は列を分ける（右列から左へ）。
+    // 長い社名でも自動で縮小し、枠内に収める。
+    var chars = tidyOne(st.main).slice(0, 20).split('');
     if (!chars.length) return;
-    var maxH = hasArc ? 46 : (single ? 74 : 66);
-    var cfs = centerFontSize(chars.length, maxH);
-    var step = cfs * 1.03;
-    var startY = 50 - (chars.length * step) / 2 + cfs * 0.72;
-    for (var i = 0; i < chars.length; i++) {
-      p.push(textEl(50, startY + i * step, cfs, color, font, chars[i]));
+    var n = chars.length;
+    var cols = n <= 2 ? 1 : (n <= 8 ? 2 : 3);
+    var rows = Math.ceil(n / cols);
+    var maxH = hasArc ? 46 : (single ? 72 : 64);
+    var maxW = hasArc ? 42 : (single ? 72 : 64);
+    var cfs = Math.min(maxH / rows / 1.04, maxW / cols / 1.04, 30);
+    var step = cfs * 1.02;
+    var colW = maxW / cols;
+    for (var c = 0; c < cols; c++) {
+      var slice = chars.slice(c * rows, c * rows + rows);
+      var x = 50 + ((cols - 1) / 2) * colW - c * colW;   // 右列から左へ
+      var startY = 50 - (slice.length * step) / 2 + cfs * 0.72;
+      for (var j = 0; j < slice.length; j++) {
+        p.push(textEl(x, startY + j * step, cfs, color, font, slice[j]));
+      }
     }
   }
 
