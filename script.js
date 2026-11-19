@@ -908,6 +908,86 @@
     document.body.removeChild(ta);
   }
 
+
+  /* ---------------------------------------------------------
+     「マイ印鑑」保存・復元（この端末内のみ）
+     --------------------------------------------------------- */
+  var PROFILE_KEY = 'hanko.profile.v1';
+  var profileStore = (function () {
+    try {
+      var k = '__hk_test__';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+      return window.localStorage;
+    } catch (e) { return null; }
+  })();
+  var profileTimer = null;
+
+  function collectProfile() {
+    var panel = document.querySelector('.panel-form');
+    if (!panel) return null;
+    var inputs = {}, radios = {};
+    panel.querySelectorAll('input[id], select[id], textarea[id]').forEach(function (el) {
+      inputs[el.id] = (el.type === 'checkbox') ? !!el.checked : el.value;
+    });
+    panel.querySelectorAll('input[type=radio]:checked').forEach(function (el) {
+      if (el.name) radios[el.name] = el.value;
+    });
+    return { v: 1, savedAt: new Date().toISOString(), inputs: inputs, radios: radios };
+  }
+
+  function queueSaveProfile() {
+    if (!profileStore) return;
+    if (profileTimer) clearTimeout(profileTimer);
+    profileTimer = setTimeout(function () {
+      var d = collectProfile();
+      if (!d) return;
+      try { profileStore.setItem(PROFILE_KEY, JSON.stringify(d)); } catch (e) {}
+    }, 500);
+  }
+
+  function restoreProfile() {
+    if (!profileStore) return false;
+    var raw, parsed;
+    try { raw = profileStore.getItem(PROFILE_KEY); } catch (e) { return false; }
+    if (!raw) return false;
+    try { parsed = JSON.parse(raw); } catch (e) { return false; }
+    if (!parsed || parsed.v !== 1) return false;
+    var panel = document.querySelector('.panel-form');
+    if (!panel) return false;
+    var filled = 0;
+    Object.keys(parsed.inputs || {}).forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      if (el.type === 'checkbox') el.checked = !!parsed.inputs[id];
+      else el.value = parsed.inputs[id];
+      filled++;
+    });
+    Object.keys(parsed.radios || {}).forEach(function (name) {
+      var el = panel.querySelector('input[type=radio][name="' + name + '"][value="' + parsed.radios[name] + '"]');
+      if (el) el.checked = true;
+    });
+    // 各入力のリスナーを発火させて状態とプレビューを同期する
+    panel.querySelectorAll('input[id], select[id], textarea[id]').forEach(function (el) {
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    return filled > 0;
+  }
+
+  function showProfileHint() {
+    var panel = document.querySelector('.panel-form');
+    if (!panel || !panel.parentNode) return;
+    var bar = document.createElement('div');
+    bar.className = 'profile-hint no-print';
+    bar.innerHTML = '前回の設定を復元しました。<button type="button" class="profile-delete" id="profileDelete">保存データを削除</button>';
+    panel.parentNode.insertBefore(bar, panel);
+    $('profileDelete').addEventListener('click', function () {
+      try { profileStore.removeItem(PROFILE_KEY); } catch (e) {}
+      if (bar.parentNode) bar.parentNode.removeChild(bar);
+    });
+  }
+
   function init() {
     // 保存済みの表示言語を復元（既定は日本語＝SEO的にも自然）
     try {
@@ -1103,6 +1183,13 @@
     }
 
     hydrate();
+
+    if (restoreProfile()) showProfileHint();
+    var pf = document.querySelector('.panel-form');
+    if (pf) {
+      pf.addEventListener('input', queueSaveProfile);
+      pf.addEventListener('change', queueSaveProfile);
+    }
   }
 
   // 状態 S を DOM に反映する
